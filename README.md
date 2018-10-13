@@ -70,7 +70,7 @@ for i in range(3):
 ```
 -----------------------------------
 
-###### Popular Articles
+##### Popular Articles
 
 Q1: What are the most popular three articles of all time?
 to find that we need to check the logs of how many visitors to each article,
@@ -83,7 +83,7 @@ SELECT path, count(*) as total_visits from log where path <> '/' group by path o
 ```
 -----------------------------------
 
-###### Popular Authors
+##### Popular Authors
 Q2: Who are the most popular article authors of all time?
 to answer this question, I created 2 views. First one will have the path/slug after fixing it to match the one in the slug column in the article table
 The where statement checks if the path have the word article at the beginning because I saw some paths like: '/spam-spam-spam-humbug' '/%20%20%20''/+++ATH0',
@@ -108,14 +108,14 @@ select  authors.name, article_views.total_reads from authors left join article_v
 
 -----------------------------------
 
-###### Errors more than 1%
+##### Errors more than 1%
 Q3: On which days did more than 1% of requests lead to errors? 
 The answer is by checking the status and time columns in log table. But first we need to find the total amount of logs whe have, I created view for that:
 ```
 create view total_logs as select count(*) as total_logs from log;
 ```
 Now all we have to do is do some math with python and answer this question.
-[Convert time to date format](http://www.postgresqltutorial.com/postgresql-date/) (MON dd,yyyy)
+- [Convert time to date format](http://www.postgresqltutorial.com/postgresql-date/) (MON dd,yyyy)
 
 First query used to store the total:
 ```
