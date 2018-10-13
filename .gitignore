@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.vagrant
+*.sql
+Vagrantfile
+**/catalog
+**/forum
+**/tournament
