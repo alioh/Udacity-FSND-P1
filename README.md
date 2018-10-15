@@ -1,5 +1,23 @@
-# Project One: PLogs Analysis
+# Project One: Logs Analysis
+This is part of the Fullstack Nanodegree Udacity course. The project sets up a PostgreSQL database for a news website.
+I have to find answers for three questions. I have three tables that I can find answers from: Authors, Log, Articles.
+For this project I have to apply what I learn in the previous lessons with a real-world data.
 
+## Requirements
+Tools used in this project are:
+- [Python 3.7](https://www.python.org/downloads/)
+- [Vagrant](https://www.vagrantup.com/downloads.html)
+- [VirtualBox](https://www.virtualbox.org/wiki/Downloads) 
+- [Newsdata database](https://d17h27t6h515a5.cloudfront.net/topher/2016/August/57b5f748_newsdata/newsdata.zip)
+
+to run the code, put in the share folder between your computer and VirtualBox.
+Access using vagrant and cd /vagrant (this is your share folder between your VirtualBox and your PC).
+Full guide on how to install and configure Vagrant is [here](https://www.udacity.com/wiki/ud088/vagrant).
+
+To run the code:
+```
+python3 code.py
+```
 
 ## SQL
 Before answering the questions, lets know more about the tables
@@ -79,7 +97,13 @@ in my query I put "where path <> '/'", because '/' is the home page of the news 
 
 Final query:
 ```
-SELECT path, count(*) as total_visits from log where path <> '/' group by path order by total_visits desc limit 3;
+SELECT PATH,
+       count(*) AS total_visits
+FROM log
+WHERE PATH <> '/'
+GROUP BY PATH
+ORDER BY total_visits DESC
+LIMIT 3;
 ```
 -----------------------------------
 
@@ -90,11 +114,27 @@ The where statement checks if the path have the word article at the beginning be
 which (i think) are not articles. I used SUBSTR to get the slug from the full path.
 here is the view creation statement:
 ```
-create view article_total_views as SELECT SUBSTR(path,10) as slug, count(*) as total_visits from log where path <> '/' and path like '/article/%' group by path order by total_visits desc;
+CREATE VIEW article_total_views AS
+SELECT SUBSTR(PATH, 10) AS slug,
+       count(*) AS total_visits
+FROM log
+WHERE PATH <> '/'
+  AND PATH LIKE '/article/%'
+GROUP BY PATH
+ORDER BY total_visits DESC;
 ```
 The second view is to group all article authors and sum all their views, creation statement:
 ```
-create view article_views as select author, sum(total_views) as total_reads from (SELECT articles.author as author, cast(article_total_views.total_visits as integer) as total_views from article_total_views left join articles on article_total_views.slug= articles.slug)as authors_views group by author order by total_reads desc;
+CREATE VIEW article_views AS
+SELECT author,
+       sum(total_views) AS total_reads
+FROM
+  (SELECT articles.author AS author,
+          cast(article_total_views.total_visits AS integer) AS total_views
+   FROM article_total_views
+   LEFT JOIN articles ON article_total_views.slug= articles.slug)AS authors_views
+GROUP BY author
+ORDER BY total_reads DESC;
 ```
 after this I can now get the authors and their total articles visits using inner join between authors
 reference:
@@ -103,25 +143,35 @@ reference:
 
 Final query to get the results:
 ```
-select  authors.name, article_views.total_reads from authors left join article_views on article_views.author = authors.id;
+SELECT authors.name,
+       article_views.total_reads
+FROM authors
+LEFT JOIN article_views ON article_views.author = authors.id;
 ```
 
 -----------------------------------
 
 ##### Errors more than 1%
 Q3: On which days did more than 1% of requests lead to errors? 
-The answer is by checking the status and time columns in log table. But first we need to find the total amount of logs whe have, I created view for that:
+I created a view to help answer this question, the view calculate total logs by date and the total of those log who were 200 OK.
+here is the view creation statement:
 ```
-create view total_logs as select count(*) as total_logs from log;
+CREATE VIEW total_visits_by_day_status AS
+SELECT TO_CHAR(TIME :: DATE, 'MON dd, yyyy') AS date,
+       count(status) AS total,
+       SUM (CASE
+                WHEN status = '404 NOT FOUND' THEN 0
+                ELSE 1
+            END) AS status_ok
+FROM log
+GROUP BY date;
 ```
 Now all we have to do is do some math with python and answer this question.
 - [Convert time to date format](http://www.postgresqltutorial.com/postgresql-date/) (MON dd,yyyy)
+- [Get % in SQL](https://stackoverflow.com/questions/18721648/calculate-percent-difference-in-sql-server)
 
-First query used to store the total:
+The query to answer the question is:
 ```
-select * from total_logs;
-```
-Second query to get logs grouped by date and status 404:
-```
-select status, TO_CHAR(time :: DATE, 'MON dd, yyyy') as date, count(*) as total_visits from log where status = '404 NOT FOUND' group by date, status;
+SELECT date, (total-status_ok)*100.0/total AS perc_error
+FROM total_visits_by_day_status
 ```
